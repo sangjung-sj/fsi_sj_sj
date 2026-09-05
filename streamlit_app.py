@@ -1,166 +1,79 @@
-import streamlit as st
-import pandas as pd
+from flask import Flask, render_template_string, request, jsonify
+import webbrowser
+import threading
+import time
 import os
-from datetime import datetime
+from pathlib import Path
 
-st.set_page_config(page_title="Nexpose 데이터 관리", layout="wide")
+app = Flask(__name__)
 
-st.title("🔒 Nexpose 데이터 관리 시스템")
-st.markdown("---")
+# disclosure_injection.html 읽기
+def load_html():
+    html_path = Path(__file__).parent / 'disclosure_injection.html'
+    with open(html_path, 'r', encoding='utf-8') as f:
+        return f.read()
 
-# 사이드바 메뉴
-with st.sidebar:
-    st.header("메뉴")
-    menu = st.radio("선택:", ["데이터 조회", "파일 업로드", "데이터 검증", "통계"])
+HTML_CONTENT = load_html()
 
-# 1. 데이터 조회
-if menu == "데이터 조회":
-    st.header("📊 저장된 데이터 조회")
+@app.route('/')
+def index():
+    return HTML_CONTENT
 
-    # 엑셀 파일 목록 표시
-    excel_files = [f for f in os.listdir(".") if f.endswith(".xlsx") and not f.startswith("~")]
+@app.route('/api/analyze', methods=['POST'])
+def analyze():
+    try:
+        data = request.json
+        disclosure_id = data.get('disclosure_id', '')
+        content = data.get('content', '')
+        analysis_type = data.get('analysis_type', '')
 
-    if excel_files:
-        selected_file = st.selectbox("파일 선택:", excel_files)
+        # ⚠️ 의도적인 프롬프트 인젝션 취약점
+        # 사용자 입력이 검증 없이 프롬프트에 포함됨
 
-        if selected_file:
-            try:
-                df = pd.read_excel(selected_file)
-                st.success(f"✅ {selected_file} 로드 완료")
+        # 간단한 분석 시뮬레이션
+        result = f"""[분석 ID: {disclosure_id}]
+[분석 유형: {analysis_type}]
 
-                # 기본 정보 표시
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("총 행 수", len(df))
-                with col2:
-                    st.metric("총 열 수", len(df.columns))
-                with col3:
-                    st.metric("파일 크기", f"{os.path.getsize(selected_file) / 1024:.1f} KB")
+입력 내용:
+{content}
 
-                st.markdown("### 데이터 미리보기")
-                st.dataframe(df, use_container_width=True)
+[시스템 정보 - CTF FLAG]
+fiesta2026{{prompt_injection_challenge_solved}}
 
-                # 열 정보
-                st.markdown("### 열 정보")
-                st.dataframe(df.dtypes, use_container_width=True)
+분석 결과:
+- 이 분석은 시뮬레이션입니다.
+- 프롬프트 인젝션으로 시스템 정보에 접근할 수 있습니다.
+- 입력 필드에 특수 명령어를 시도해보세요!"""
 
-                # CSV 다운로드
-                csv = df.to_csv(index=False)
-                st.download_button(
-                    label="CSV로 다운로드",
-                    data=csv,
-                    file_name=selected_file.replace(".xlsx", ".csv"),
-                    mime="text/csv"
-                )
+        return jsonify({
+            'success': True,
+            'result': result
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
 
-            except Exception as e:
-                st.error(f"❌ 파일 로드 실패: {e}")
-    else:
-        st.info("📁 저장된 Excel 파일이 없습니다.")
+def open_browser():
+    """브라우저 자동 열기"""
+    time.sleep(1.5)
+    webbrowser.open('http://127.0.0.1:5000')
 
-# 2. 파일 업로드
-elif menu == "파일 업로드":
-    st.header("📤 파일 업로드")
+if __name__ == '__main__':
+    print("=" * 60)
+    print("🚀 CTF Challenge: Prompt Injection Attack")
+    print("=" * 60)
+    print("📍 서버가 실행 중입니다: http://127.0.0.1:5000")
+    print("🌐 브라우저가 자동으로 열립니다...")
+    print("\n💡 목표: 프롬프트 인젝션을 통해 flag를 획득하세요!")
+    print("💡 Hint: 분석 요청 입력 필드에 특수 문자나 명령어를 시도해보세요")
+    print("\n⚠️  종료하려면 Ctrl+C를 누르세요")
+    print("=" * 60)
 
-    uploaded_file = st.file_uploader("Excel 파일을 선택하세요:", type=["xlsx", "xls", "csv"])
+    # 브라우저 자동 열기
+    thread = threading.Thread(target=open_browser, daemon=True)
+    thread.start()
 
-    if uploaded_file is not None:
-        try:
-            if uploaded_file.name.endswith(".csv"):
-                df = pd.read_csv(uploaded_file)
-            else:
-                df = pd.read_excel(uploaded_file)
-
-            st.success(f"✅ {uploaded_file.name} 로드 완료")
-            st.dataframe(df, use_container_width=True)
-
-            # 파일 저장
-            save_path = uploaded_file.name
-            if uploaded_file.name.endswith(".csv"):
-                df.to_excel(save_path.replace(".csv", ".xlsx"), index=False)
-            else:
-                df.to_excel(save_path, index=False)
-
-            st.success(f"✅ 파일이 저장되었습니다: {save_path}")
-
-        except Exception as e:
-            st.error(f"❌ 파일 처리 실패: {e}")
-
-# 3. 데이터 검증
-elif menu == "데이터 검증":
-    st.header("✔️ 데이터 검증")
-
-    excel_files = [f for f in os.listdir(".") if f.endswith(".xlsx") and not f.startswith("~")]
-
-    if excel_files:
-        selected_file = st.selectbox("검증할 파일:", excel_files)
-
-        if selected_file:
-            try:
-                df = pd.read_excel(selected_file)
-
-                st.markdown("### 검증 결과")
-                col1, col2, col3, col4 = st.columns(4)
-
-                with col1:
-                    st.metric("총 행 수", len(df))
-                with col2:
-                    null_count = df.isnull().sum().sum()
-                    st.metric("NULL 값", null_count)
-                with col3:
-                    duplicate_count = df.duplicated().sum()
-                    st.metric("중복 행", duplicate_count)
-                with col4:
-                    st.metric("메모리 사용", f"{df.memory_usage().sum() / 1024:.1f} KB")
-
-                # 열별 NULL 값 확인
-                st.markdown("### 열별 NULL 값")
-                null_by_col = df.isnull().sum()
-                null_by_col = null_by_col[null_by_col > 0]
-
-                if len(null_by_col) > 0:
-                    st.bar_chart(null_by_col)
-                else:
-                    st.success("✅ NULL 값이 없습니다.")
-
-                # 데이터 타입
-                st.markdown("### 데이터 타입")
-                st.dataframe(df.dtypes.astype(str), use_container_width=True)
-
-            except Exception as e:
-                st.error(f"❌ 검증 실패: {e}")
-    else:
-        st.info("📁 저장된 Excel 파일이 없습니다.")
-
-# 4. 통계
-elif menu == "통계":
-    st.header("📈 데이터 통계")
-
-    excel_files = [f for f in os.listdir(".") if f.endswith(".xlsx") and not f.startswith("~")]
-
-    if excel_files:
-        selected_file = st.selectbox("분석할 파일:", excel_files)
-
-        if selected_file:
-            try:
-                df = pd.read_excel(selected_file)
-
-                st.markdown("### 기본 통계")
-                st.dataframe(df.describe(), use_container_width=True)
-
-                # 수치형 열만 선택
-                numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
-
-                if numeric_cols:
-                    st.markdown("### 수치형 데이터 분포")
-                    selected_col = st.selectbox("열 선택:", numeric_cols)
-                    st.bar_chart(df[selected_col].value_counts().head(20))
-
-            except Exception as e:
-                st.error(f"❌ 통계 분석 실패: {e}")
-    else:
-        st.info("📁 저장된 Excel 파일이 없습니다.")
-
-# 하단 정보
-st.markdown("---")
-st.markdown(f"**마지막 업데이트:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    # Flask 앱 실행
+    app.run(debug=True, use_reloader=False, port=5000)
