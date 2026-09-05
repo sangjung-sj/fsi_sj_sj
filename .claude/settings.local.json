@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find \"c:/Users/USER\" -maxdepth 4 -iname \"*넥스포즈*\" -o -iname \"*자료정리*\" 2>/dev/null | head -10)",
+      "Read(//c/Users/USER/**)",
+      "Bash(python - \"c:/Users/USER/Downloads/for_user/넥스포즈 자료정리.xlsx\")",
+      "PowerShell(code --install-extension ms-python.python)",
+      "PowerShell(code --install-extension ms-python.python --force)",
+      "PowerShell(code --install-extension ms-python.vscode-pylance)",
+      "Bash(python3)",
+      "Bash(python3 test_first_row.py)",
+      "PowerShell($env:PYTHONIOENCODING = \"utf-8\"; python3 \"C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-USER-Downloads-for-user\\\\730b7791-4d9d-4dae-84ed-380b09d7ad8a\\\\scratchpad\\\\test_first_row.py\")",
+      "PowerShell(python3 --version)",
+      "Bash(awk '/192.0.2.154.*partner040769/ {print; exit}' cloud/object-access-20260728.jsonl)",
+      "Bash(git init *)",
+      "Bash(git config *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(git pull *)",
+      "Bash(git checkout *)"
+    ]
+  }
+}
